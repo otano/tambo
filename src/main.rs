@@ -8,6 +8,7 @@ use serde_json::Value;
 use typst::foundations::{Dict, IntoValue};
 use typst_as_lib::TypstEngine;
 use typst_as_lib::file_resolver::FileSystemResolver;
+use typst_as_lib::typst_kit_options::TypstKitFontOptions;
 
 #[derive(Parser)]
 #[command(name = "tambo", about = "Generate PDFs from JSON data using Typst templates")]
@@ -91,6 +92,7 @@ fn compile_entry(
     let engine = TypstEngine::builder()
         .with_static_source_file_resolver(sources)
         .add_file_resolver(FileSystemResolver::new(root.to_path_buf()))
+        .search_fonts_with(TypstKitFontOptions::default())
         .build();
 
     let warned = engine.compile_with_input(main_file_id, inputs);
