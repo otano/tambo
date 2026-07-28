@@ -188,3 +188,102 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_sanitize_template_name_lowercase() {
+        assert_eq!(sanitize_template_name("Section 1"), "section-1");
+    }
+
+    #[test]
+    fn test_sanitize_template_name_underscore_to_hyphen() {
+        assert_eq!(sanitize_template_name("my_section"), "my-section");
+    }
+
+    #[test]
+    fn test_sanitize_template_name_strip_special_chars() {
+        assert_eq!(sanitize_template_name("Section 1: Intro!"), "section-1-intro");
+    }
+
+    #[test]
+    fn test_sanitize_template_name_trim() {
+        assert_eq!(sanitize_template_name("  Default  "), "default");
+    }
+
+    #[test]
+    fn test_json_to_typst_value_string() {
+        let v = json_to_typst_value(&json!("hello"));
+        let s = format!("{:?}", v);
+        assert!(s.contains("hello"), "got {s:?}");
+    }
+
+    #[test]
+    fn test_json_to_typst_value_null() {
+        let v = json_to_typst_value(&Value::Null);
+        assert_eq!(format!("{:?}", v), "None");
+    }
+
+    #[test]
+    fn test_json_to_typst_value_integer() {
+        let v = json_to_typst_value(&json!(42));
+        let s = format!("{:?}", v);
+        assert!(s.contains("42"), "got {s:?}");
+    }
+
+    #[test]
+    fn test_json_to_typst_value_bool() {
+        let v = json_to_typst_value(&json!(true));
+        let s = format!("{:?}", v);
+        assert!(s.contains("true"), "got {s:?}");
+    }
+
+    #[test]
+    fn test_json_to_typst_value_array() {
+        let v = json_to_typst_value(&json!(["a", "b"]));
+        let s = format!("{:?}", v);
+        assert!(s.contains('a'), "got {s:?}");
+    }
+
+    #[test]
+    fn test_json_to_typst_value_object() {
+        let v = json_to_typst_value(&json!({"key": "val"}));
+        let s = format!("{:?}", v);
+        assert!(s.contains("val"), "got {s:?}");
+    }
+
+    #[test]
+    fn test_compile_entry_minimal() {
+        let entry = json!({
+            "Titre": "Test",
+            "Auteur": "Test",
+            "Date": "2024",
+            "explicatif": null,
+            "Credit line": "CC0",
+            "traduction": null,
+            "Pays": "France",
+            "Ville": "Paris",
+            "Domaine": "Test",
+            "Designation rédigee": "test",
+            "Prêteur": "Test",
+            "N° inventaire prêteur": "T-01",
+            "DEXID": "01",
+            "Image ref": null,
+        });
+
+        let template = r#"
+#import sys: inputs
+#let d = inputs.data
+#d.at("Titre")
+"#;
+
+        let result = compile_entry(&entry, template, Path::new("."));
+        assert!(result.is_ok(), "compilation should succeed: {:?}", result.err());
+        let pdf = result.unwrap();
+        assert!(!pdf.is_empty(), "PDF should not be empty");
+        assert!(pdf.starts_with(b"%PDF-"), "should start with PDF magic bytes");
+    }
+}
