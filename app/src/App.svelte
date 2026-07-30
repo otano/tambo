@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import JSZip from 'jszip'
+  import { BlobWriter, ZipWriter, Uint8ArrayReader, TextReader } from '@zip.js/zip.js'
 
   let generatePdf: (json: string, template: string) => Uint8Array
   let generateTyp: (json: string, template: string) => string
@@ -83,7 +83,7 @@
     progress = ''
     error = ''
 
-    const zip = new JSZip()
+    let pending: { name: string; pdf: Uint8Array; typ: string }[] = []
     let count = 0
     let skipped = 0
 
@@ -98,10 +98,11 @@
 
       progress = `(${i + 1}/${entries.length}) ${groupe}`
       const jsonStr = JSON.stringify(entry)
-      const pdf = generatePdf(jsonStr, template)
-      const typ = generateTyp(jsonStr, template)
-      zip.file(`${templateName}.pdf`, pdf)
-      zip.file(`${templateName}.typ`, typ)
+      pending.push({
+        name: `${String(i + 1).padStart(3, '0')}-${templateName}`,
+        pdf: generatePdf(jsonStr, template).slice(),
+        typ: generateTyp(jsonStr, template),
+      })
       count++
     }
 
@@ -111,7 +112,18 @@
       return
     }
 
-    const blob = await zip.generateAsync({ type: 'blob' })
+    progress = `Création du ZIP (${count} entrées)...`
+
+    const blobWriter = new BlobWriter('application/zip')
+    const zip = new ZipWriter(blobWriter)
+
+    for (const r of pending) {
+      await zip.add(`${r.name}.pdf`, new Uint8ArrayReader(r.pdf))
+      await zip.add(`${r.name}.typ`, new TextReader(r.typ))
+    }
+
+    const blob = await zip.close()
+
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
