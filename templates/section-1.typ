@@ -1,6 +1,6 @@
 #import sys: inputs
 #set page(paper: "a4", margin: 2cm)
-#set text(font: "Linux Libertine", size: 11pt)
+#set text(font: "inter", size: 11pt)
 
 #let d = inputs.data
 

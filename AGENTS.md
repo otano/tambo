@@ -2,7 +2,7 @@
 
 ## Project
 
-CLI tool (`tambo`) that generates PDFs from JSON data using Typst templates. Each JSON entry maps to a template (via the `Section` field) and produces one PDF.
+CLI tool (`tambo`) that generates PDFs from JSON data using Typst templates. Each JSON entry maps to a template (via the `groupe` field) and produces one PDF. Entries without a `groupe` value are skipped.
 
 ## Build & Run
 
@@ -16,15 +16,14 @@ cargo run -- -i <json> -t <templates_dir> -o <output_dir>
 - `-i, --input` — JSON file (array of objects)
 - `-t, --templates` — Typst `.typ` template directory (default: `templates/`)
 - `-o, --output` — PDF output directory (default: `output/`)
-- `--field` — JSON field for template selection (default: `Section`)
-- `--default-template` — fallback template name (default: `default`)
+- `--field` — JSON field for template selection (default: `groupe`)
 - `--root` — root for resolving image paths (default: JSON file's parent dir)
 
 ## Architecture
 
 - `src/main.rs` — single-file CLI, uses `typst-as-lib` for compilation
-- Templates are `.typ` files in `templates/`, named `<sanitized-section>.typ`
-- Template name derived from JSON `--field`: lowercase, spaces → hyphens
+- Templates are `.typ` files in `templates/`, named `<sanitized-groupe>.typ`
+- Template name derived from JSON `--field`: lowercase, spaces/underscores → hyphens
 - Data injected via `sys.inputs` — templates access it with `#import sys: inputs`
 
 ## Template Conventions
@@ -51,4 +50,4 @@ Templates receive data via `sys.inputs`:
 
 - `FileSystemResolver` is required for image loading — detached sources alone don't resolve filesystem paths
 - Font warnings are expected if system fonts aren't installed (templates use `Linux Libertine` by default)
-- The `Section` field value determines template selection — entries with missing/unmatched sections use `--default-template`
+- The `groupe` field value determines template selection — entries with missing/null `groupe` are skipped

@@ -25,13 +25,9 @@ struct Cli {
     #[arg(short, long, default_value = "output")]
     output: PathBuf,
 
-    /// JSON field used to select the template (e.g. "Section")
-    #[arg(long, default_value = "Section")]
+    /// JSON field used to select the template (e.g. "groupe")
+    #[arg(long, default_value = "groupe")]
     field: String,
-
-    /// Fallback template name (without .typ) when field is missing or template not found
-    #[arg(long, default_value = "default")]
-    default_template: String,
 
     /// Root directory for resolving relative image paths (defaults to JSON file's parent)
     #[arg(long)]
@@ -142,11 +138,18 @@ fn main() -> Result<()> {
     let mut template_cache: HashMap<String, String> = HashMap::new();
 
     for (i, entry) in entries.iter().enumerate() {
-        let template_name = entry
-            .get(&cli.field)
-            .and_then(|v| v.as_str())
-            .map(sanitize_template_name)
-            .unwrap_or_else(|| cli.default_template.clone());
+        let template_name = match entry.get(&cli.field).and_then(|v| v.as_str()) {
+            Some(name) => sanitize_template_name(name),
+            None => {
+                eprintln!(
+                    "[{}/{}] SKIP: no `{}` field",
+                    i + 1,
+                    entries.len(),
+                    cli.field,
+                );
+                continue;
+            }
+        };
 
         let template_source = match template_cache.get(&template_name) {
             Some(src) => src.clone(),
