@@ -1,2 +1,4 @@
 /target
 /output
+.DS_Store
+data/* copie*.json
