@@ -2255,6 +2255,15 @@ dependencies = [
  "anyhow",
  "clap",
  "serde_json",
+ "tambo-core",
+]
+
+[[package]]
+name = "tambo-core"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "thiserror",
  "typst",
  "typst-as-lib",
  "typst-pdf",

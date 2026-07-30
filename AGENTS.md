@@ -2,7 +2,7 @@
 
 ## Project
 
-CLI tool (`tambo`) that generates PDFs from JSON data using Typst templates. Each JSON entry maps to a template (via the `groupe` field) and produces one PDF. Entries without a `groupe` value are skipped.
+CLI tool (`tambo`) that generates PDFs from JSON data using Typst templates. Each JSON entry maps to a template (via the `groupe` field) and produces one PDF. Entries without a `groupe` value are skipped. Each PDF is accompanied by a `.typ` file containing the data embedded inline, compilable standalone.
 
 ## Build & Run
 
@@ -19,35 +19,60 @@ cargo run -- -i <json> -t <templates_dir> -o <output_dir>
 - `--field` — JSON field for template selection (default: `groupe`)
 - `--root` — root for resolving image paths (default: JSON file's parent dir)
 
-## Architecture
+## Architecture (Workspace)
 
-- `src/main.rs` — single-file CLI, uses `typst-as-lib` for compilation
-- Templates are `.typ` files in `templates/`, named `<sanitized-groupe>.typ`
-- Template name derived from JSON `--field`: lowercase, spaces/underscores → hyphens
-- Data injected via `sys.inputs` — templates access it with `#import sys: inputs`
-
-## Template Conventions
-
-Templates receive data via `sys.inputs`:
-```typst
-#import sys: inputs
-#let d = inputs.data
-# Title: #d.at("Titre")
+```
+tambo/
+├── Cargo.toml              (workspace)
+├── crates/
+│   └── tambo-core/         (lib — moteur pur)
+│       ├── src/
+│       │   ├── lib.rs
+│       │   ├── error.rs    (AppError — thiserror)
+│       │   ├── json.rs     (json_to_typst_value, json_to_typst_literal)
+│       │   ├── typst.rs    (compile_entry, compile_entry_simple)
+│       │   └── generator.rs (sanitize_template_name, generate_standalone_typ)
+│       └── Cargo.toml
+├── src/main.rs             (binaire CLI mince)
+└── templates/
 ```
 
-- Use `.at("field name")` for keys with spaces/special characters
-- Images use relative paths resolved from `--root` directory
-- `null` JSON values become Typst `none`
+### Features `tambo-core`
+
+| Feature | Default | Contenu |
+|---------|---------|---------|
+| `native` | oui | `FileSystemResolver`, `search_fonts_with` (typst-kit-fonts) |
+| (aucune) | — | compilation sans filesystem, fonts passées en mémoire |
+
+- `compile_entry` — avec `FileSystemResolver` + `search_fonts_with` (feature `native`)
+- `compile_entry_simple` — sans filesystem, prend `&[&[u8]]` pour les fonts (WASM-compatible)
+
+## Templates
+
+- Fichiers `.typ` dans `templates/`, nommés `<sanitized-groupe>.typ`
+- Nom dérivé du champ JSON `--field`: lowercase, spaces/underscores → hyphens
+- Accèdent aux données via `sys.inputs`:
+  ```typst
+  #import sys: inputs
+  #let d = inputs.data
+  ```
+- Utiliser `.at("field name")` pour les clés avec espaces/caractères spéciaux
+- Chemins d'images résolus depuis `--root`
+- `null` JSON → Typst `none`
+- Le `.typ` compagnon remplace `#import sys: inputs` par `#let __tambo_data = (...)`
 
 ## Key Crates
 
-- `typst-as-lib` 0.16 — compiles Typst from Rust, uses `with_static_source_file_resolver` + `FileSystemResolver`
-- `typst-pdf` 0.15 — exports compiled document to PDF bytes
-- `typ` 0.15 — underlying Typst compiler (used for `Dict`, `IntoValue`)
+- `typst-as-lib` 0.16
+- `typst-pdf` 0.15
+- `typst` 0.15 (utilisé pour `Dict`, `IntoValue`)
 - `clap` 4 — CLI argument parsing
+- `thiserror` 2 — `AppError`
+- `anyhow` 1 — CLI error handling
 
 ## Gotchas
 
-- `FileSystemResolver` is required for image loading — detached sources alone don't resolve filesystem paths
-- Font warnings are expected if system fonts aren't installed (templates use `Linux Libertine` by default)
-- The `groupe` field value determines template selection — entries with missing/null `groupe` are skipped
+- `FileSystemResolver` requis pour les images — les sources statiques seules ne résolvent pas les chemins
+- `compile_entry` nécessite la feature `native` (disponible seulement sur le binaire CLI)
+- Fonts warnings si polices système absentes
+- Le champ `groupe` détermine le template — valeurs `null`/absentes → skip
