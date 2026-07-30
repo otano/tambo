@@ -34,8 +34,9 @@
     error = ''
 
     try {
-      const wasm = await import('./wasm/tambo_wasm.js')
-      const pdf = wasm.generate_pdf(jsonStr, templateStr)
+      const { default: init, generate_pdf } = await import('./wasm/tambo_wasm.js')
+      await init()
+      const pdf = generate_pdf(jsonStr, templateStr)
 
       const blob = new Blob([pdf], { type: 'application/pdf' })
       const url = URL.createObjectURL(blob)
