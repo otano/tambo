@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/tambo-core"]
+members = ["crates/tambo-core", "crates/tambo-wasm"]
 
 [package]
 name = "tambo"

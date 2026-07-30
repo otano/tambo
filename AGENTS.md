@@ -25,15 +25,27 @@ cargo run -- -i <json> -t <templates_dir> -o <output_dir>
 tambo/
 ├── Cargo.toml              (workspace)
 ├── crates/
-│   └── tambo-core/         (lib — moteur pur)
-│       ├── src/
-│       │   ├── lib.rs
-│       │   ├── error.rs    (AppError — thiserror)
-│       │   ├── json.rs     (json_to_typst_value, json_to_typst_literal)
-│       │   ├── typst.rs    (compile_entry, compile_entry_simple)
-│       │   └── generator.rs (sanitize_template_name, generate_standalone_typ)
-│       └── Cargo.toml
+│   ├── tambo-core/         (lib — moteur pur)
+│   │   ├── src/
+│   │   │   ├── lib.rs
+│   │   │   ├── error.rs    (AppError — thiserror)
+│   │   │   ├── json.rs     (json_to_typst_value, json_to_typst_literal)
+│   │   │   ├── typst.rs    (compile_entry, compile_entry_simple)
+│   │   │   └── generator.rs (sanitize_template_name, generate_standalone_typ)
+│   │   └── Cargo.toml
+│   └── tambo-wasm/         (cdylib — glue wasm-bindgen)
+│       ├── Cargo.toml
+│       ├── build.rs        (curl Inter font → OUT_DIR)
+│       └── src/lib.rs      (generate_pdf export)
 ├── src/main.rs             (binaire CLI mince)
+├── app/                    (Svelte 5 + Vite, SPA)
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── index.html
+│   └── src/
+│       ├── main.ts
+│       ├── App.svelte
+│       └── wasm/           (output wasm-pack)
 └── templates/
 ```
 
@@ -60,6 +72,28 @@ tambo/
 - Chemins d'images résolus depuis `--root`
 - `null` JSON → Typst `none`
 - Le `.typ` compagnon remplace `#import sys: inputs` par `#let __tambo_data = (...)`
+
+## WASM Build
+
+```bash
+wasm-pack build crates/tambo-wasm --target web --out-dir ../../app/src/wasm
+```
+
+Export unique :
+
+```rust
+#[wasm_bindgen]
+pub fn generate_pdf(json_str: &str, template: &str) -> Result<Vec<u8>, JsValue>
+```
+
+## App (Svelte 5)
+
+```bash
+cd app
+npm run build:wasm   # wasm-pack build → src/wasm/
+npm run dev          # dev server
+npm run build        # production build → app/dist/
+```
 
 ## Key Crates
 
