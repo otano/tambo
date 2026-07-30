@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:wasm": "wasm-pack build crates/tambo-wasm --target web --out-dir ../../app/src/wasm",
+    "build:wasm": "cd .. && wasm-pack build crates/tambo-wasm --target web --out-dir app/src/wasm",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
   },
@@ -18,5 +18,8 @@
     "svelte-check": "^4.7.3",
     "typescript": "~6.0.2",
     "vite": "^8.2.0"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
   }
 }

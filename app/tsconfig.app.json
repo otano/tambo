@@ -17,5 +17,6 @@
     "checkJs": true,
     "moduleDetection": "force"
   },
+  "exclude": ["src/wasm"],
   "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"]
 }
