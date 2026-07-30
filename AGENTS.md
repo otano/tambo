@@ -2,7 +2,7 @@
 
 ## Project
 
-CLI tool (`tambo`) that generates PDFs from JSON data using Typst templates. Each JSON entry maps to a template (via the `groupe` field) and produces one PDF. Entries without a `groupe` value are skipped.
+CLI tool (`tambo`) that generates PDFs from JSON data using Typst templates. Each JSON entry maps to a template (via the `groupe` field) and produces one PDF. Entries without a `groupe` value are skipped. Each PDF is accompanied by a `.typ` file containing the data embedded inline, compilable standalone.
 
 ## Build & Run
 
@@ -25,6 +25,7 @@ cargo run -- -i <json> -t <templates_dir> -o <output_dir>
 - Templates are `.typ` files in `templates/`, named `<sanitized-groupe>.typ`
 - Template name derived from JSON `--field`: lowercase, spaces/underscores → hyphens
 - Data injected via `sys.inputs` — templates access it with `#import sys: inputs`
+- Each PDF has a companion `.typ` file with data embedded inline (`__tambo_data`), compilable standalone
 
 ## Template Conventions
 
@@ -38,6 +39,7 @@ Templates receive data via `sys.inputs`:
 - Use `.at("field name")` for keys with spaces/special characters
 - Images use relative paths resolved from `--root` directory
 - `null` JSON values become Typst `none`
+- The companion `.typ` file replaces `#import sys: inputs` with `#let __tambo_data = (...)`, so templates must use `inputs.data` to access data (not another name)
 
 ## Key Crates
 
