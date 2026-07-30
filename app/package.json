@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:wasm": "cd .. && wasm-pack build crates/tambo-wasm --target web --out-dir app/src/wasm",
+    "build:wasm": "cd .. && wasm-pack build crates/tambo-wasm --target web --out-dir \"$(pwd)/app/src/wasm\"",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
   },
