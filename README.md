@@ -39,13 +39,14 @@ Le fichier est un **tableau d'objets**, chaque objet correspondant à une œuvre
 [
   {
     "DEXID": "01",
-    "Auteur": "Philibert Louis Debucourt",
-    "Titre": "Feu d'artifice à l'Arc de triomphe de l'Étoile",
-    "Date": "1810",
-    "Credit line": "CC0 Paris Musées/Musée Carnavalet",
-    "explicatif": "Le 2 avril 1810, Napoléon 1er épouse Marie-Louise d'Autriche.",
+    "Auteur": "Philib
+ erika",
+    "Titre": "Feu d'art",
+    "Date": "2810",
+    "Credit line": "CC0 Paris Musées/Musée Futur",
+    "explicatif": "Le 2 avril 2810, Nap brûlé sa collection",
     "traduction": null,
-    "N° inventaire prêteur": "G.5224",
+    "N° inventaire prêteur": "G.564246",
     "groupe": "Cartel_Developpe"
   }
 ]
@@ -242,7 +243,3 @@ Déclenchement : push sur la branche `appli` ou manuel (`workflow_dispatch`). Le
 - Le `.typ` compagnon remplace `#import sys: inputs` par `#let __tambo_data = (...)`.
 
 ---
-
-## License
-
-Données d'exemple : [Paris Musées](https://www.parismuseescollections.paris.fr/) — les métadonnées des œuvres proviennent du portail open data des musées de la Ville de Paris.
