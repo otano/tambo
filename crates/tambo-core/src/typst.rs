@@ -91,6 +91,21 @@ mod tests {
     use serde_json::json;
 
     #[test]
+    fn test_compile_entry_simple_twice() {
+        let entry = json!({"Titre": "A", "Auteur": "Test1"});
+        let template = r#"#import sys: inputs
+#let d = inputs.data
+#d.at("Titre")
+"#;
+        let r1 = compile_entry_simple(&entry, template, &[]).unwrap();
+        let entry2 = json!({"Titre": "B", "Auteur": "Test2"});
+        let r2 = compile_entry_simple(&entry2, template, &[]).unwrap();
+        assert!(r1.starts_with(b"%PDF-"));
+        assert!(r2.starts_with(b"%PDF-"));
+        assert_ne!(r1, r2, "deux appels doivent produire des PDF différents");
+    }
+
+    #[test]
     fn test_compile_entry_simple_minimal() {
         let entry = json!({
             "Titre": "Test",
