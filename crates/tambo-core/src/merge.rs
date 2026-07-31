@@ -142,6 +142,22 @@ mod tests {
         compile_entry_simple(&entry, template, &[]).unwrap()
     }
 
+    fn page_contents(doc: &Document) -> Vec<Vec<u8>> {
+        let mut out = Vec::new();
+        for (_num, page_id) in doc.get_pages() {
+            let mut bytes = Vec::new();
+            for id in doc.get_page_contents(page_id) {
+                if let Ok(Object::Stream(stream)) = doc.get_object(id) {
+                    if let Ok(c) = stream.decompressed_content() {
+                        bytes.extend_from_slice(&c);
+                    }
+                }
+            }
+            out.push(bytes);
+        }
+        out
+    }
+
     #[test]
     fn test_merge_pdfs_concatenates_pages() {
         let a = sample_pdf("Page A");
@@ -154,6 +170,32 @@ mod tests {
 
         let doc = Document::load_mem(&merged).unwrap();
         assert_eq!(doc.get_pages().len(), 3, "le PDF fusionné doit avoir 3 pages");
+    }
+
+    #[test]
+    fn test_merge_pdfs_preserves_distinct_content() {
+        let a = sample_pdf("Cuville");
+        let b = sample_pdf("Schall");
+        let c = sample_pdf("Debucourt");
+
+        let merged = merge_pdfs(&[&a, &b, &c]).unwrap();
+        let doc = Document::load_mem(&merged).unwrap();
+        assert_eq!(doc.get_pages().len(), 3);
+
+        let contents = page_contents(&doc);
+        assert_eq!(contents.len(), 3, "chaque page doit avoir un flux de contenu");
+        assert_ne!(
+            contents[0], contents[1],
+            "les pages 1 et 2 doivent avoir un contenu différent"
+        );
+        assert_ne!(
+            contents[1], contents[2],
+            "les pages 2 et 3 doivent avoir un contenu différent"
+        );
+        assert_ne!(
+            contents[0], contents[2],
+            "les pages 1 et 3 doivent avoir un contenu différent"
+        );
     }
 
     #[test]

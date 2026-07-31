@@ -39,35 +39,34 @@ Le fichier est un **tableau d'objets**, chaque objet correspondant à une œuvre
 [
   {
     "DEXID": "01",
-    "Auteur": "Philib
- erika",
+    "Auteur": "Philibert Louis Debucourt",
     "Titre": "Feu d'art",
     "Date": "2810",
-    "Credit line": "CC0 Paris Musées/Musée Futur",
-    "explicatif": "Le 2 avril 2810, Nap brûlé sa collection",
-    "traduction": null,
-    "N° inventaire prêteur": "G.564246",
-    "groupe": "Cartel_Developpe"
+    "Credit": "CC0 Paris Musées/Musée Futur",
+    "Explicatif": "Le 2 avril 2810, Nap brûlé sa collection",
+    "Traduction": null,
+    "Inventaire": "G.564246",
+    "Groupe": "Cartel_Developpe"
   }
 ]
 ```
 
 > `null` (champ absent ou sans valeur) correspond à `none` dans le template Typst.
 
-### 🎯 Le champ `groupe` : comment le bon template est choisi
+### 🎯 Le champ `Groupe` : comment le bon template est choisi
 
-Le champ **`groupe`** de chaque objet détermine le template utilisé.
+Le champ **`Groupe`** de chaque objet détermine le template utilisé.
 
 1. La valeur du champ est **normalisée** : minuscules, espaces et `_` → `-`, caractères spéciaux supprimés.
 2. Le fichier `{valeur-normalisée}.typ` est recherché parmi les templates déposés.
 3. Si le template n'existe pas, l'entrée est **ignorée** (comptée dans les « ignorés »).
 
-| `groupe` dans le JSON        | Template attendu            |
-| ---------------------------- | --------------------------- |
-| `"Cartel_Developpe"`         | `cartel-developpe.typ`      |
-| `"Section 1"`                | `section-1.typ`             |
-| `"section1"`                 | `section1.typ`              |
-| `null` ou absent             | entrée ignorée              |
+| `Groupe` dans le JSON  | Template attendu       |
+| ---------------------- | ---------------------- |
+| `"cartel-develop"`     | `cartel-develop.typ`   |
+| `"cartel-simple"`      | `cartel-simple.typ`    |
+| `"Section 1"`          | `section-1.typ`        |
+| `null` ou absent       | entrée ignorée         |
 
 ### ✍️ C'est quoi Typst ?
 
@@ -167,22 +166,22 @@ cargo run -- -i sample.json -t templates -o output
 
 Le CLI écrit `{DEXID}.pdf` (ou l'index si `DEXID` absent) **et** le `.typ` compagnon dans le dossier de sortie.
 
-| Flag                    | Défaut            | Rôle                                                              |
-| ----------------------- | ----------------- | ----------------------------------------------------------------- |
-| `-i, --input`           | _(obligatoire)_   | Fichier JSON (tableau d'objets)                                    |
-| `-t, --templates`       | `templates`       | Dossier des templates `.typ`                                       |
-| `-o, --output`          | `output`          | Dossier de sortie des PDF / `.typ`                                 |
-| `--field`               | `groupe`          | Champ JSON utilisé pour sélectionner le template                   |
-| `--root`                | parent du JSON    | Racine pour résoudre les chemins d'images relatifs                  |
+| Flag              | Défaut          | Rôle                                               |
+| ----------------- | --------------- | -------------------------------------------------- |
+| `-i, --input`     | _(obligatoire)_ | Fichier JSON (tableau d'objets)                    |
+| `-t, --templates` | `templates`     | Dossier des templates `.typ`                       |
+| `-o, --output`    | `output`        | Dossier de sortie des PDF / `.typ`                 |
+| `--field`         | `Groupe`        | Champ JSON utilisé pour sélectionner le template   |
+| `--root`          | parent du JSON  | Racine pour résoudre les chemins d'images relatifs |
 
 ### ⚙️ Le moteur (`tambo-core`)
 
 Deux modes de compilation partagent le même code de cœur :
 
-| Fonction                 | Feature `native` | Description                                                                 |
-| ------------------------ | ---------------- | --------------------------------------------------------------------------- |
-| `compile_entry`          | oui (par défaut) | `FileSystemResolver` + `search_fonts_with` (polices système) → **CLI**       |
-| `compile_entry_simple`   | —                | Sans filesystem, fonts passées en mémoire `&[&[u8]]` → **WASM / navigateur** |
+| Fonction               | Feature `native` | Description                                                                  |
+| ---------------------- | ---------------- | ---------------------------------------------------------------------------- |
+| `compile_entry`        | oui (par défaut) | `FileSystemResolver` + `search_fonts_with` (polices système) → **CLI**       |
+| `compile_entry_simple` | —                | Sans filesystem, fonts passées en mémoire `&[&[u8]]` → **WASM / navigateur** |
 
 - La feature `native` est activée par défaut (binaire CLI uniquement).
 - `compile_entry_simple` est utilisée par le WASM : les polices (dont Inter) sont embarquées dans le binaire compilé.
@@ -225,11 +224,11 @@ Le workflow `.github/workflows/deploy.yml` :
 2. Build WASM + `npm run build` → `app/dist/`
 3. Upload de l'artifact puis déploiement **GitHub Actions → Pages**
 
-Déclenchement : push sur la branche `appli` ou manuel (`workflow_dispatch`). Le site est ensuite disponible sur `https://<user>.github.io/tambo/`.
+Déclenchement : push sur la branche `main` ou manuel (`workflow_dispatch`). Le site est ensuite disponible sur `https://<user>.github.io/tambo/`.
 
 ### 📐 Conventions des templates
 
-- Fichiers nommés `<groupe-normalisé>.typ` dans `templates/` (ou déposés dans l'app).
+- Fichiers nommés `<Groupe-normalisé>.typ` dans `templates/` (ou déposés dans l'app).
 - Accès aux données :
 
   ```typst
@@ -237,7 +236,7 @@ Déclenchement : push sur la branche `appli` ou manuel (`workflow_dispatch`). Le
   #let d = inputs.data
   ```
 
-- Clés avec espaces/accents → `.at("nom du champ")` (ex. `d.at("N° inventaire prêteur")`).
+- Clés avec espaces/accents → `.at("nom du champ")` (ex. `d.at("Inventaire")`).
 - Chemins d'images résolus depuis `--root` (CLI) ; dans l'app, les images doivent être embarquées ou référencées autrement.
 - `null` JSON → `none` Typst.
 - Le `.typ` compagnon remplace `#import sys: inputs` par `#let __tambo_data = (...)`.

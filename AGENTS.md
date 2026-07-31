@@ -2,7 +2,7 @@
 
 ## Project
 
-CLI tool (`tambo`) that generates PDFs from JSON data using Typst templates. Each JSON entry maps to a template (via the `groupe` field) and produces one PDF. Entries without a `groupe` value are skipped. Each PDF is accompanied by a `.typ` file containing the data embedded inline, compilable standalone.
+CLI tool (`tambo`) that generates PDFs from JSON data using Typst templates. Each JSON entry maps to a template (via the `Groupe` field) and produces one PDF. Entries without a `Groupe` value are skipped. Each PDF is accompanied by a `.typ` file containing the data embedded inline, compilable standalone.
 
 ## Build & Run
 
@@ -16,7 +16,7 @@ cargo run -- -i <json> -t <templates_dir> -o <output_dir>
 - `-i, --input` — JSON file (array of objects)
 - `-t, --templates` — Typst `.typ` template directory (default: `templates/`)
 - `-o, --output` — PDF output directory (default: `output/`)
-- `--field` — JSON field for template selection (default: `groupe`)
+- `--field` — JSON field for template selection (default: `Groupe`)
 - `--root` — root for resolving image paths (default: JSON file's parent dir)
 
 ## Architecture (Workspace)
@@ -51,17 +51,17 @@ tambo/
 
 ### Features `tambo-core`
 
-| Feature | Default | Contenu |
-|---------|---------|---------|
-| `native` | oui | `FileSystemResolver`, `search_fonts_with` (typst-kit-fonts) |
-| (aucune) | — | compilation sans filesystem, fonts passées en mémoire |
+| Feature  | Default | Contenu                                                     |
+| -------- | ------- | ----------------------------------------------------------- |
+| `native` | oui     | `FileSystemResolver`, `search_fonts_with` (typst-kit-fonts) |
+| (aucune) | —       | compilation sans filesystem, fonts passées en mémoire       |
 
 - `compile_entry` — avec `FileSystemResolver` + `search_fonts_with` (feature `native`)
 - `compile_entry_simple` — sans filesystem, prend `&[&[u8]]` pour les fonts (WASM-compatible)
 
 ## Templates
 
-- Fichiers `.typ` dans `templates/`, nommés `<sanitized-groupe>.typ`
+- Fichiers `.typ` dans `templates/`, nommés `<sanitized-Groupe>.typ`
 - Nom dérivé du champ JSON `--field`: lowercase, spaces/underscores → hyphens
 - Accèdent aux données via `sys.inputs`:
   ```typst
@@ -123,4 +123,4 @@ npm run build        # production build → app/dist/
 - `FileSystemResolver` requis pour les images — les sources statiques seules ne résolvent pas les chemins
 - `compile_entry` nécessite la feature `native` (disponible seulement sur le binaire CLI)
 - Fonts warnings si polices système absentes
-- Le champ `groupe` détermine le template — valeurs `null`/absentes → skip
+- Le champ `Groupe` détermine le template — valeurs `null`/absentes → skip

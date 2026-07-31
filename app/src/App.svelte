@@ -11,6 +11,7 @@
   let entries = $state<unknown[]>([])
   let templateFiles = $state<File[]>([])
   let templates = $state<Map<string, string>>(new Map())
+  let templateWarnings = $state<Record<string, string>>({})
   let processing = $state(false)
   let progress = $state('')
   let error = $state('')
@@ -48,11 +49,19 @@
     const content = await file.text()
     templates.set(name, content)
     templateFiles = [...templateFiles, file]
+
+    if (!/^\s*#import\s+sys:\s*inputs\b/m.test(content)) {
+      templateWarnings[name] =
+        'Ce template ne lit pas les données JSON (pas de "#import sys: inputs") : toutes les pages de ce groupe seront identiques.'
+    } else {
+      delete templateWarnings[name]
+    }
   }
 
   function removeTemplate(file: File) {
     const name = sanitize(file.name.replace(/\.typ$/i, ''))
     templates.delete(name)
+    delete templateWarnings[name]
     templateFiles = templateFiles.filter((f) => f !== file)
   }
 
@@ -88,14 +97,14 @@
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i] as Record<string, unknown>
-      const groupe: unknown = entry.groupe
-      if (!groupe) { skipped++; continue }
+      const Groupe: unknown = entry.Groupe
+      if (!Groupe) { skipped++; continue }
 
-      const templateName = sanitize(String(groupe))
+      const templateName = sanitize(String(Groupe))
       const template = templates.get(templateName)
       if (!template) { skipped++; continue }
 
-      progress = `(${i + 1}/${entries.length}) ${groupe}`
+      progress = `(${i + 1}/${entries.length}) ${Groupe}`
       const jsonStr = JSON.stringify(entry)
       pending.push({
         name: `${String(i + 1).padStart(3, '0')}-${templateName}`,
@@ -234,7 +243,7 @@
     ondrop={handleTemplateDrop}
     onkeydown={(e) => { if (e.key === 'Enter') document.getElementById('template-input')?.click() }}
   >
-    {#if templateFiles.length > 0}
+      {#if templateFiles.length > 0}
       <div class="file-list">
         {#each templateFiles as f (f.name)}
           <span class="file-tag">
@@ -243,6 +252,13 @@
           </span>
         {/each}
       </div>
+      {#if Object.values(templateWarnings).length > 0}
+        <div class="warnings">
+          {#each Object.entries(templateWarnings) as [name, msg]}
+            <div class="warning">⚠ {name} : {msg}</div>
+          {/each}
+        </div>
+      {/if}
     {:else}
       <span class="hint">Déposer les fichiers template <strong>.typ</strong> ici</span>
     {/if}
@@ -338,6 +354,17 @@
     line-height: 1;
     padding: 0 0.1rem;
     color: #991b1b;
+  }
+
+  .warnings { margin-top: 0.75rem; text-align: left; }
+  .warning {
+    padding: 0.5rem 0.75rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    color: #92400e;
+    font-size: 0.8rem;
+    margin-bottom: 0.4rem;
   }
 
   .actions {
