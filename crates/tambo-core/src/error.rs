@@ -10,6 +10,9 @@ pub enum AppError {
 
     #[error("Ressource introuvable : {0}")]
     ResourceNotFound(String),
+
+    #[error("Entrée invalide : {0}")]
+    InvalidInput(String),
 }
 
 pub type Result<T> = std::result::Result<T, AppError>;
