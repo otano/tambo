@@ -4,6 +4,7 @@
 
   let generatePdf: (json: string, template: string) => Uint8Array
   let generateTyp: (json: string, template: string) => string
+  let generateCombinedTyp: (templates: string[], jsons: string[]) => string
   let mergePdfs: (pdfs: Uint8Array[]) => Uint8Array
 
   let jsonFile = $state<File | null>(null)
@@ -20,6 +21,7 @@
     const mod: any = await import('./wasm/tambo_wasm.js')
     generatePdf = mod.generate_pdf
     generateTyp = mod.generate_standalone_typ
+    generateCombinedTyp = mod.generate_combined_typ
     mergePdfs = mod.merge_pdfs
     await mod.default()
   })
@@ -169,6 +171,31 @@
     }
     processing = false
   }
+
+  async function generateSingleTyp() {
+    processing = true
+    progress = ''
+    error = ''
+
+    const { pending, skipped } = await compileAll()
+
+    if (pending.length === 0) {
+      error = 'Aucun fichier généré. Vérifiez que les templates correspondent aux entrées.'
+      processing = false
+      return
+    }
+
+    progress = `Assemblage de ${pending.length} entrée(s)...`
+
+    try {
+      const typ = generateCombinedTyp(pending.map((r) => r.template), pending.map((r) => r.json))
+      download(new Blob([typ], { type: 'text/plain' }), 'tambo.typ')
+      progress = `.typ unique généré (${pending.length} page(s))${skipped > 0 ? ` (${skipped} ignoré(s))` : ''}`
+    } catch (e) {
+      error = `Échec de la génération : ${e}`
+    }
+    processing = false
+  }
 </script>
 
 <div class="app">
@@ -235,7 +262,14 @@
       onclick={generateSingle}
       disabled={processing || entries.length === 0 || templates.size === 0}
     >
-      {processing ? 'Génération…' : 'Générer un PDF unique'}
+      {processing ? 'Génération…' : 'PDF unique'}
+    </button>
+    <button
+      class="generate-btn single"
+      onclick={generateSingleTyp}
+      disabled={processing || entries.length === 0 || templates.size === 0}
+    >
+      {processing ? 'Génération…' : '.typ unique'}
     </button>
   </div>
 
@@ -254,7 +288,7 @@
     margin: 3rem auto;
     font-family: system-ui, sans-serif;
   }
-  h1 { margin: 0 0 1.5rem; font-size: 1.5rem; }
+  h1 { margin: 0 0 1.5rem; font-size: 1.5rem; color: #E1344C; }
 
   .dropzone {
     border: 2px dashed #ccc;
