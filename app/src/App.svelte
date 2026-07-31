@@ -4,6 +4,7 @@
 
   let generatePdf: (json: string, template: string) => Uint8Array
   let generateTyp: (json: string, template: string) => string
+  let mergePdfs: (pdfs: Uint8Array[]) => Uint8Array
 
   let jsonFile = $state<File | null>(null)
   let entries = $state<unknown[]>([])
@@ -19,6 +20,7 @@
     const mod: any = await import('./wasm/tambo_wasm.js')
     generatePdf = mod.generate_pdf
     generateTyp = mod.generate_standalone_typ
+    mergePdfs = mod.merge_pdfs
     await mod.default()
   })
 
@@ -78,13 +80,8 @@
     for (const f of files) loadTemplate(f)
   }
 
-  async function generate() {
-    processing = true
-    progress = ''
-    error = ''
-
-    let pending: { name: string; pdf: Uint8Array; typ: string }[] = []
-    let count = 0
+  async function compileAll() {
+    let pending: { name: string; pdf: Uint8Array; json: string; template: string }[] = []
     let skipped = 0
 
     for (let i = 0; i < entries.length; i++) {
@@ -101,37 +98,75 @@
       pending.push({
         name: `${String(i + 1).padStart(3, '0')}-${templateName}`,
         pdf: generatePdf(jsonStr, template).slice(),
-        typ: generateTyp(jsonStr, template),
+        json: jsonStr,
+        template,
       })
-      count++
     }
 
-    if (count === 0) {
+    return { pending, skipped }
+  }
+
+  function download(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function generateZip() {
+    processing = true
+    progress = ''
+    error = ''
+
+    const { pending, skipped } = await compileAll()
+
+    if (pending.length === 0) {
       error = 'Aucun fichier généré. Vérifiez que les templates correspondent aux entrées.'
       processing = false
       return
     }
 
-    progress = `Création du ZIP (${count} entrées)...`
+    progress = `Création du ZIP (${pending.length} entrées)...`
 
     const blobWriter = new BlobWriter('application/zip')
     const zip = new ZipWriter(blobWriter)
 
     for (const r of pending) {
       await zip.add(`${r.name}.pdf`, new Uint8ArrayReader(r.pdf))
-      await zip.add(`${r.name}.typ`, new TextReader(r.typ))
+      await zip.add(`${r.name}.typ`, new TextReader(generateTyp(r.json, r.template)))
     }
 
     const blob = await zip.close()
+    download(blob, 'tambo-output.zip')
 
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'tambo-output.zip'
-    a.click()
-    URL.revokeObjectURL(url)
+    progress = `${pending.length} fichier(s) généré(s)${skipped > 0 ? ` (${skipped} ignoré(s))` : ''}`
+    processing = false
+  }
 
-    progress = `${count} fichier(s) généré(s)${skipped > 0 ? ` (${skipped} ignoré(s))` : ''}`
+  async function generateSingle() {
+    processing = true
+    progress = ''
+    error = ''
+
+    const { pending, skipped } = await compileAll()
+
+    if (pending.length === 0) {
+      error = 'Aucun fichier généré. Vérifiez que les templates correspondent aux entrées.'
+      processing = false
+      return
+    }
+
+    progress = `Fusion de ${pending.length} PDF(s)...`
+
+    try {
+      const merged = mergePdfs(pending.map((r) => r.pdf)).slice()
+      download(new Blob([merged], { type: 'application/pdf' }), 'tambo.pdf')
+      progress = `PDF unique généré (${pending.length} page(s))${skipped > 0 ? ` (${skipped} ignoré(s))` : ''}`
+    } catch (e) {
+      error = `Échec de la fusion : ${e}`
+    }
     processing = false
   }
 </script>
@@ -187,13 +222,22 @@
   </div>
   <input id="template-input" type="file" accept=".typ" multiple hidden onchange={onTemplateInput} />
 
-  <button
-    class="generate-btn"
-    onclick={generate}
-    disabled={processing || entries.length === 0 || templates.size === 0}
-  >
-    {processing ? 'Génération…' : 'Générer le ZIP'}
-  </button>
+  <div class="actions">
+    <button
+      class="generate-btn"
+      onclick={generateZip}
+      disabled={processing || entries.length === 0 || templates.size === 0}
+    >
+      {processing ? 'Génération…' : 'Générer le ZIP'}
+    </button>
+    <button
+      class="generate-btn single"
+      onclick={generateSingle}
+      disabled={processing || entries.length === 0 || templates.size === 0}
+    >
+      {processing ? 'Génération…' : 'Générer un PDF unique'}
+    </button>
+  </div>
 
   {#if error}
     <div class="error">{error}</div>
@@ -262,9 +306,12 @@
     color: #991b1b;
   }
 
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+  }
   .generate-btn {
-    display: block;
-    width: 100%;
+    flex: 1;
     padding: 0.75rem;
     font-size: 1rem;
     background: #1a1a2e;
@@ -274,6 +321,7 @@
     cursor: pointer;
     font-weight: 600;
   }
+  .generate-btn.single { background: #4a4a6a; }
   .generate-btn:disabled { opacity: 0.4; cursor: default; }
 
   .progress {
