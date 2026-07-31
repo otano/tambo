@@ -35,3 +35,40 @@ pub fn merge_pdfs(pdfs: &Array) -> std::result::Result<Vec<u8>, JsValue> {
     tambo_core::merge_pdfs(&refs)
         .map_err(|e| JsValue::from(js_sys::Error::new(&e.to_string())))
 }
+
+#[wasm_bindgen]
+pub fn generate_combined_typ(
+    templates: &Array,
+    json_strs: &Array,
+) -> std::result::Result<String, JsValue> {
+    if templates.length() != json_strs.length() {
+        return Err(JsValue::from(js_sys::Error::new(
+            "Les tableaux templates et JSON doivent avoir la même taille",
+        )));
+    }
+
+    let mut template_strs: Vec<String> = Vec::new();
+    let mut values: Vec<serde_json::Value> = Vec::new();
+    let mut items: Vec<(&str, &serde_json::Value)> = Vec::new();
+
+    for i in 0..json_strs.length() {
+        let template = templates
+            .get(i)
+            .as_string()
+            .ok_or_else(|| JsValue::from(js_sys::Error::new("Template invalide")))?;
+        let json = json_strs
+            .get(i)
+            .as_string()
+            .ok_or_else(|| JsValue::from(js_sys::Error::new("JSON invalide")))?;
+        let value: serde_json::Value = serde_json::from_str(&json)
+            .map_err(|e| JsValue::from(js_sys::Error::new(&format!("JSON invalide : {e}"))))?;
+        template_strs.push(template);
+        values.push(value);
+    }
+
+    for i in 0..values.len() {
+        items.push((template_strs[i].as_str(), &values[i]));
+    }
+
+    Ok(tambo_core::generate_combined_typ(&items))
+}
