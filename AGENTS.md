@@ -61,6 +61,20 @@ tambo/
 - `null` JSON → Typst `none`
 - Le `.typ` compagnon remplace `#import sys: inputs` par `#let __tambo_data = (...)`
 
+## Template Conventions
+
+Templates receive data via `sys.inputs`:
+```typst
+#import sys: inputs
+#let d = inputs.data
+# Title: #d.at("Titre")
+```
+
+- Use `.at("field name")` for keys with spaces/special characters
+- Images use relative paths resolved from `--root` directory
+- `null` JSON values become Typst `none`
+- The companion `.typ` file replaces `#import sys: inputs` with `#let __tambo_data = (...)`, so templates must use `inputs.data` to access data (not another name)
+
 ## Key Crates
 
 - `typst-as-lib` 0.16
