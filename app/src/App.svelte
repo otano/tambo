@@ -17,8 +17,21 @@
   let error = $state('')
   let jsonDragOver = $state(false)
   let templateDragOver = $state(false)
+  let theme = $state<'light' | 'dark'>('light')
+  let isDark = $derived(theme === 'dark')
+
+  function applyTheme(t: 'light' | 'dark') {
+    theme = t
+    document.documentElement.dataset.theme = t
+    localStorage.setItem('tambo-theme', t)
+  }
+
+  function toggleTheme() {
+    applyTheme(theme === 'dark' ? 'light' : 'dark')
+  }
 
   onMount(async () => {
+    theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'
     const mod: any = await import('./wasm/tambo_wasm.js')
     generatePdf = mod.generate_pdf
     generateTyp = mod.generate_standalone_typ
@@ -208,7 +221,17 @@
 </script>
 
 <div class="app">
-  <h1>tambo</h1>
+  <div class="header">
+    <h1>tambo</h1>
+    <button
+      class="theme-toggle"
+      onclick={toggleTheme}
+      aria-label={isDark ? 'Activer le mode clair' : 'Activer le mode sombre'}
+      title={isDark ? 'Mode clair' : 'Mode sombre'}
+    >
+      {isDark ? '☀️' : '🌙'}
+    </button>
+  </div>
 
   <div
     class="dropzone"
@@ -299,39 +322,121 @@
 </div>
 
 <style>
+  :global(:root) {
+    --bg: #ffffff;
+    --text: #1a1a2e;
+    --border: #ccc;
+    --border-hover: #888;
+    --border-strong: #4a4a6a;
+    --drop-bg: transparent;
+    --drop-drag-bg: #f0f0ff;
+    --hint: #666;
+    --tag-bg: #e8e8f0;
+    --badge-bg: #1a1a2e;
+    --btn-bg: #1a1a2e;
+    --btn-single-bg: #4a4a6a;
+    --btn-text: #ffffff;
+    --warning-bg: #fffbeb;
+    --warning-border: #fde68a;
+    --warning-text: #92400e;
+    --progress-bg: #f0fdf4;
+    --progress-border: #86efac;
+    --progress-text: #166534;
+    --error-bg: #fef2f2;
+    --error-border: #fca5a5;
+    --error-text: #991b1b;
+  }
+
+  :global([data-theme="dark"]) {
+    --bg: #0f1220;
+    --text: #e5e7eb;
+    --border: #2d3447;
+    --border-hover: #4a5268;
+    --border-strong: #3d465c;
+    --drop-bg: #141828;
+    --drop-drag-bg: #1a1f33;
+    --hint: #9aa3b5;
+    --tag-bg: #232838;
+    --badge-bg: #3d465c;
+    --btn-bg: #2a3350;
+    --btn-single-bg: #3a4360;
+    --btn-text: #f2f4fa;
+    --warning-bg: #2e2612;
+    --warning-border: #8a6d1f;
+    --warning-text: #f0d98c;
+    --progress-bg: #0f2418;
+    --progress-border: #1f7a45;
+    --progress-text: #7ee2a8;
+    --error-bg: #2a1216;
+    --error-border: #a33737;
+    --error-text: #f0a0a0;
+  }
+
+  :global(body) {
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.2s, color 0.2s;
+  }
+
   .app {
     max-width: 640px;
     margin: 3rem auto;
     font-family: system-ui, sans-serif;
+    color: var(--text);
   }
-  h1 { margin: 0 0 1.5rem; font-size: 1.5rem; color: #E1344C; }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 { margin: 0; font-size: 1.5rem; color: #E1344C; }
+
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.1rem;
+    background: var(--btn-single-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .theme-toggle:hover { border-color: var(--border-hover); }
 
   .dropzone {
-    border: 2px dashed #ccc;
+    border: 2px dashed var(--border);
     border-radius: 10px;
     padding: 1.5rem;
     margin-bottom: 1rem;
     text-align: center;
     cursor: pointer;
+    background: var(--drop-bg);
     transition: background 0.15s, border-color 0.15s;
   }
-  .dropzone:hover { border-color: #888; }
+  .dropzone:hover { border-color: var(--border-hover); }
   .dropzone.dragover {
-    border-color: #1a1a2e;
-    background: #f0f0ff;
+    border-color: var(--border-strong);
+    background: var(--drop-drag-bg);
   }
   .dropzone.has {
     border-style: solid;
-    border-color: #4a4a6a;
-    background: #f8f8fc;
+    border-color: var(--border-strong);
+    background: var(--drop-bg);
   }
-  .hint { color: #666; font-size: 0.9rem; }
+  .hint { color: var(--hint); font-size: 0.9rem; }
   .filename { font-weight: 600; }
   .badge {
     display: inline-block;
     margin-left: 0.5rem;
     padding: 0.1rem 0.5rem;
-    background: #1a1a2e;
+    background: var(--badge-bg);
     color: white;
     border-radius: 99px;
     font-size: 0.75rem;
@@ -342,7 +447,7 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.2rem 0.6rem;
-    background: #e8e8f0;
+    background: var(--tag-bg);
     border-radius: 6px;
     font-size: 0.85rem;
   }
@@ -353,16 +458,16 @@
     font-size: 1rem;
     line-height: 1;
     padding: 0 0.1rem;
-    color: #991b1b;
+    color: var(--error-text);
   }
 
   .warnings { margin-top: 0.75rem; text-align: left; }
   .warning {
     padding: 0.5rem 0.75rem;
-    background: #fffbeb;
-    border: 1px solid #fde68a;
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-border);
     border-radius: 6px;
-    color: #92400e;
+    color: var(--warning-text);
     font-size: 0.8rem;
     margin-bottom: 0.4rem;
   }
@@ -375,32 +480,32 @@
     flex: 1;
     padding: 0.75rem;
     font-size: 1rem;
-    background: #1a1a2e;
-    color: white;
+    background: var(--btn-bg);
+    color: var(--btn-text);
     border: none;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
   }
-  .generate-btn.single { background: #4a4a6a; }
+  .generate-btn.single { background: var(--btn-single-bg); }
   .generate-btn:disabled { opacity: 0.4; cursor: default; }
 
   .progress {
     margin-top: 1rem;
     padding: 0.75rem;
-    background: #f0fdf4;
-    border: 1px solid #86efac;
+    background: var(--progress-bg);
+    border: 1px solid var(--progress-border);
     border-radius: 8px;
-    color: #166534;
+    color: var(--progress-text);
     text-align: center;
   }
   .error {
     margin-top: 1rem;
     padding: 0.75rem;
-    background: #fef2f2;
-    border: 1px solid #fca5a5;
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
     border-radius: 8px;
-    color: #991b1b;
+    color: var(--error-text);
     font-size: 0.85rem;
   }
 </style>
