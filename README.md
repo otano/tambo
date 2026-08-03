@@ -1,14 +1,17 @@
-# 🖼️ tambo
+# tambo
 
 > Générez des PDF d'exposition (cartes d'œuvres, notules…) depuis vos données JSON et des templates [Typst](https://typst.app), **entièrement dans votre navigateur**.
 
 Tambo compile chaque entrée de votre fichier JSON vers un PDF en utilisant le template correspondant, puis vous restitue un archive ZIP avec, pour chaque objet, son PDF **et** un fichier `.typ` autonome recompilable.
 
+tambo est accessible à l'adresse suivante :
+https://otano.github.io/tambo/
+
 ---
 
-## 👤 Guide utilisateur
+## Guide utilisateur
 
-### 🔒 Vos données restent sur votre machine
+### Vos données restent sur votre machine
 
 C'est le point le plus important : **aucune donnée ne quitte votre navigateur**.
 
@@ -16,13 +19,11 @@ C'est le point le plus important : **aucune donnée ne quitte votre navigateur**
 - Toute la compilation Typst → PDF s'exécute **localement**, dans votre navigateur, grâce à un moteur Typst compilé en WebAssembly (WASM).
 - Votre fichier JSON et vos templates sont lus depuis votre disque et traités en mémoire : rien n'est envoyé sur Internet.
 
-> 💡 Vous pouvez vérifier en déconnectant votre réseau pendant la génération : tout continue de fonctionner.
+> Vous pouvez vérifier en déconnectant votre réseau pendant la génération : tout continue de fonctionner.
 
-### 🚀 Démarrage rapide
-
-1. **Glissez-déposez** votre fichier **JSON** (son nom et le nombre d'entrées apparaissent).
-2. **Glissez-déposez** tous vos templates **`.typ`** (leurs noms apparaissent, supprimables un à un).
-3. Cliquez sur **« Générer le ZIP »**.
+### 1. **Glissez-déposez** votre fichier **JSON** (son nom et le nombre d'entrées apparaissent).
+1. **Glissez-déposez** tous vos templates **`.typ`** (leurs noms apparaissent, supprimables un à un).
+2. Cliquez sur **« Générer le ZIP »**.
 
 Le navigateur télécharge une archive `tambo-output.zip` contenant, pour chaque objet traité :
 
@@ -31,30 +32,73 @@ Le navigateur télécharge une archive `tambo-output.zip` contenant, pour chaque
 001-cartel-developpe.typ   ← le template avec les données embarquées
 ```
 
-### 📄 Le format JSON attendu
+### Le format JSON attendu
 
 Le fichier est un **tableau d'objets**, chaque objet correspondant à une œuvre. Les valeurs sont des chaînes de caractères ou `null`. Les clés peuvent contenir accents et espaces.
 
 ```json
 [
   {
-    "DEXID": "01",
-    "Auteur": "Philib
- erika",
-    "Titre": "Feu d'art",
-    "Date": "2810",
-    "Credit line": "CC0 Paris Musées/Musée Futur",
-    "explicatif": "Le 2 avril 2810, Nap brûlé sa collection",
-    "traduction": null,
-    "N° inventaire prêteur": "G.564246",
-    "groupe": "Cartel_Developpe"
-  }
+
+"DEXID": null,
+
+"Image": "media/image16.jpeg",
+
+"Pays": "France",
+
+"Ville": "Paris",
+
+"Preteur": "Centre des monuments nationaux",
+
+"Auteur": "Laurent Penot",
+
+"Titre": "L’Arc",
+
+"Date": "2022",
+
+"Technique": "photographie",
+
+"longueur": "200mm",
+
+"largeur": "300mm",
+
+"Profondeur": "3mm",
+
+"Inventaire": "LLW212-0123",
+
+"StatutPret": "reproduction",
+
+"StatutNote": "© 2022 Laurent Penot",
+
+"Credit": "© Laurent Penot",
+
+"Section": "Cimaise 3",
+
+"Groupe": "cartel-develop",
+
+"Explicatif": " la lumière rasante fait miroiter  La nuit venue, Elle rythme un renouveau .",
+
+"Traduction": "the light peeking over the horizon floats in the darkness,constantly renewing the perception",
+
+"Museo": 2342,
+
+"Divers": null,
+
+"Custom1": null,
+
+"Custom2": null,
+
+"Conditions": "présentation sous bocal pléxi atmosphérique ",
+
+"VAeuro": 20000
+
+},
 ]
 ```
 
 > `null` (champ absent ou sans valeur) correspond à `none` dans le template Typst.
 
-### 🎯 Le champ `groupe` : comment le bon template est choisi
+### Le champ `groupe` : comment le bon template est choisi
 
 Le champ **`groupe`** de chaque objet détermine le template utilisé.
 
@@ -69,7 +113,7 @@ Le champ **`groupe`** de chaque objet détermine le template utilisé.
 | `"section1"`                 | `section1.typ`              |
 | `null` ou absent             | entrée ignorée              |
 
-### ✍️ C'est quoi Typst ?
+### C'est quoi Typst ?
 
 [Typst](https://typst.app) est un langage de composition de documents moderne, conçu comme une alternative plus simple et plus rapide à LaTeX. Un template Typst décrit la mise en page (marges, polices, couleurs) et l'agencement des données.
 
@@ -82,14 +126,14 @@ Dans les templates de tambo, les données sont accessibles via `inputs.data` :
 #d.at("Titre")        // champs avec espaces → .at("...")
 ```
 
-### 📦 Ce que vous obtenez
+### Ce que vous obtenez
 
 - **`.pdf`** — le rendu final du template appliqué aux données de l'objet.
 - **`.typ`** — le « compagnon » : le même template mais avec les données **embarquées inline** (au lieu de `#import sys: inputs`). Ce fichier se compile **hors-ligne, sans tambo**, avec n'importe quel outil Typst (`typst compile`), idéal pour archiver ou pour modifier à la main ensuite.
 
 ---
 
-## 🛠️ Guide développeur
+## Guide développeur
 
 ### Architecture
 
@@ -128,19 +172,19 @@ graph TB
 ```
 tambo/
 ├── Cargo.toml                  # workspace Cargo (workspace racine)
-├── src/main.rs                 # 🧩 binaire CLI (mince, délègue à tambo-core)
+├── src/main.rs                 # binaire CLI (mince, délègue à tambo-core)
 ├── crates/
-│   ├── tambo-core/             # ⚙️ moteur pur (lib)
+│   ├── tambo-core/             # moteur pur (lib)
 │   │   └── src/
 │   │       ├── lib.rs          # ré-export des fonctions publiques
 │   │       ├── error.rs        # AppError (thiserror)
 │   │       ├── json.rs         # json_to_typst_value / json_to_typst_literal
 │   │       ├── typst.rs        # compile_entry / compile_entry_simple
 │   │       └── generator.rs    # sanitize_template_name / generate_standalone_typ
-│   └── tambo-wasm/             # 🌐 glue wasm-bindgen
+│   └── tambo-wasm/             # glue wasm-bindgen
 │       ├── build.rs            # télécharge la font Inter → OUT_DIR
 │       └── src/lib.rs          # exports generate_pdf / generate_standalone_typ
-├── app/                        # 🌐 application web (Svelte 5 + Vite)
+├── app/                        # application web (Svelte 5 + Vite)
 │   ├── src/
 │   │   ├── App.svelte          # drag & drop, batch, ZIP
 │   │   ├── tambo-wasm.d.ts     # types TS du module WASM
@@ -152,7 +196,7 @@ tambo/
 └── .github/workflows/deploy.yml # CI → GitHub Pages
 ```
 
-### 🧩 CLI — usage
+### CLI — usage
 
 ```bash
 cargo build
@@ -187,7 +231,7 @@ Deux modes de compilation partagent le même code de cœur :
 - La feature `native` est activée par défaut (binaire CLI uniquement).
 - `compile_entry_simple` est utilisée par le WASM : les polices (dont Inter) sont embarquées dans le binaire compilé.
 
-### 🌐 La couche WASM (`tambo-wasm`)
+### La couche WASM (`tambo-wasm`)
 
 Export unique compilé avec [`wasm-bindgen`](https://rustwasm.github.io/wasm-bindgen/) :
 
@@ -202,7 +246,7 @@ pub fn generate_standalone_typ(json_str: &str, template: &str) -> Result<String,
 - `build.rs` télécharge **Inter** (TTF) dans `OUT_DIR`, embarqué via `include_bytes!`.
 - Rebuilder : `wasm-pack build crates/tambo-wasm --target web --out-dir app/src/wasm` (ou `cd app && npm run build:wasm`).
 
-### 🌐 Application web (`app/`)
+### Application web (`app/`)
 
 ```bash
 cd app
@@ -217,7 +261,7 @@ npm run build        # build production → app/dist/
 - Tout se passe côté client : le WASM contient le compilateur Typst et les polices, aucune donnée n'est envoyée à un serveur.
 - Le `.wasm` est exclu du type-check (`tsconfig.app.json`) car généré automatiquement.
 
-### 🚀 Déploiement GitHub Pages
+### Déploiement GitHub Pages
 
 Le workflow `.github/workflows/deploy.yml` :
 
@@ -227,9 +271,7 @@ Le workflow `.github/workflows/deploy.yml` :
 
 Déclenchement : push sur la branche `appli` ou manuel (`workflow_dispatch`). Le site est ensuite disponible sur `https://<user>.github.io/tambo/`.
 
-### 📐 Conventions des templates
-
-- Fichiers nommés `<groupe-normalisé>.typ` dans `templates/` (ou déposés dans l'app).
+###  Fichiers nommés `<groupe-normalisé>.typ` dans `templates/` (ou déposés dans l'app).
 - Accès aux données :
 
   ```typst
