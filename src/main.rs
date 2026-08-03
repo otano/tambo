@@ -21,8 +21,8 @@ struct Cli {
     #[arg(short, long, default_value = "output")]
     output: PathBuf,
 
-    /// JSON field used to select the template (e.g. "groupe")
-    #[arg(long, default_value = "groupe")]
+    /// JSON field used to select the template (e.g. "Groupe")
+    #[arg(long, default_value = "Groupe")]
     field: String,
 
     /// Root directory for resolving relative image paths (defaults to JSON file's parent)

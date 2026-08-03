@@ -117,5 +117,25 @@ mod tests {
         let pdf = crate::typst::compile_entry_simple(&json!({}), &combined, &[]).unwrap();
         let doc = lopdf::Document::load_mem(&pdf).unwrap();
         assert_eq!(doc.get_pages().len(), 3, "le PDF compilé doit avoir 3 pages");
+
+        let contents: Vec<Vec<u8>> = doc
+            .get_pages()
+            .values()
+            .map(|page_id| {
+                let mut bytes = Vec::new();
+                for id in doc.get_page_contents(*page_id) {
+                    if let Ok(lopdf::Object::Stream(stream)) = doc.get_object(id) {
+                        if let Ok(c) = stream.decompressed_content() {
+                            bytes.extend_from_slice(&c);
+                        }
+                    }
+                }
+                bytes
+            })
+            .collect();
+        assert_eq!(contents.len(), 3);
+        assert_ne!(contents[0], contents[1], "les pages 1 et 2 doivent différer");
+        assert_ne!(contents[1], contents[2], "les pages 2 et 3 doivent différer");
+        assert_ne!(contents[0], contents[2], "les pages 1 et 3 doivent différer");
     }
 }
